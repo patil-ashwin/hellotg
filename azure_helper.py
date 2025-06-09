@@ -54,10 +54,21 @@ def extract_intent(prompt):
 # 2. EXPLANATION GENERATOR (based on config)
 def explain_result(tg_json, config):
     explanation_type = config.get("explanation_type", "custom")
+    
     if explanation_type == "custom":
         return _custom_explanation(tg_json, config)
-    elif explanation_type == "free":
-        return "No specific explanation prompt configured. You can ask your own questions based on the context."
+    
+    elif explanation_type in ["free", "freeform"]:
+        sys_prompt = config.get("system_prompt")
+        if not sys_prompt:
+            return "No specific explanation prompt configured. You can ask your own questions based on the context."
+        
+        messages = [
+            SystemMessage(content=sys_prompt),
+            HumanMessage(content=f"Here is the vertex lookup result:\n{json.dumps(tg_json)}")
+        ]
+        return llm(messages).content
+    
     else:
         return f"Unsupported explanation type: {explanation_type}"
 
