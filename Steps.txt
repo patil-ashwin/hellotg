@@ -1,0 +1,17 @@
+
+Step 1:
+python3 -m venv venv
+source venv/bin/activate    # On Windows: venv\Scripts\activate
+
+Step 2:
+pip install pytigergraph requests
+
+Step 3:
+python main.py
+
+Step 4: 
+streamlit run streamlit_app.py   # streamlit UI
+
+Step 5:
+python gradio_app.py
+

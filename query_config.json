@@ -1,0 +1,34 @@
+[
+  {
+    "intent": "ring_explanation",
+    "query_name": "get_full_data",
+    "description": "Explains the structure and risk of a fraud ring based on ring_id",
+    "input_params": ["ring_id"],
+    "explanation_type": "custom",
+    "custom_prompt": [
+      "You are a data-to-text expert. Your task is to extract fields from a JSON representing a fraud detection ring structure and generate a very specific summary.",
+      "",
+      "Expected output format:",
+      "Ring \"<TargetRing.v_id>\" is comprised of [<PEEntities[].v_id>] entities with a total of [<DDA account_numbers>] DDA accounts and [<RPS account_numbers>] RPS accounts.",
+      "The entities have an average BART score of [<TargetRing.attributes.avg_pae_risk>].",
+      "Accounts [<ClosedAccounts[].account_number>] were closed in the past 60 days.",
+      "We have seen [<sum of ZelleTokenWithSendercount[].sender_count>] number (<calculated_percentage>%) of DDA accounts with Zelle transactions to the same recipient.",
+      "An additional [<count of Addresses>] number of accounts were linked by a physical address.",
+      "",
+      "Instructions:",
+      "- Replace placeholders with actual values from JSON.",
+      "- For RPS accounts, select those accounts from AllAccounts where attributes.account_type is \"ELN_03\" or \"ICS_021\".",
+      "- Calculate the percentage as (sum of Zelle sender count / total AllAccounts count) * 100, rounded to one decimal.",
+      "- Only include the final percentage value in parentheses, not the formula.",
+      "- If any section's data is missing, skip that sentence.",
+      "- Return the final output as a single paragraph without any explanation."
+    ]
+  },
+  {
+    "intent": "merchant_network",
+    "query_name": "get_merchant_network",
+    "description": "Explains the connections between merchants and users",
+    "input_params": ["merchant_id"],
+    "explanation_type": "free"
+  }
+]

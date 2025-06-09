@@ -1,0 +1,138 @@
+{
+  "TargetRing": [
+    {
+      "attributes": {
+        "avg_pae_risk": 0.192
+      },
+      "v_id": "20250515085044_63059d0d-e90b-4623-ab42-109815e67257 496 104514",
+      "v_type": "exp_community_ring"
+    }
+  ],
+  "ZelleTokenWithSendercount": [
+    {
+      "attributes": {
+        "zelleToken": "tmcgoochk@boston.com",
+        "sender_count": 2
+      },
+      "v_id": "tmcgoochk@boston.com",
+      "v_type": "ZelleToken"
+    },{
+      "attributes": {
+        "zelleToken": "xyz@boston.com",
+        "sender_count": 3
+      },
+      "v_id": "xyz@boston.com",
+      "v_type": "ZelleToken"
+    }],
+  "PEEntities": [
+    {
+      "attributes": {
+        "peEntity": "pe546945033247401680611"
+      },
+      "v_id": "pe546945033247401680611",
+      "v_type": "PEEntity"
+    },
+    {
+      "attributes": {
+        "peEntity": "pe204564398883486472888"
+      },
+      "v_id": "pe204564398883486472888",
+      "v_type": "PEEntity"
+    },
+    {
+      "attributes": {
+        "peEntity": "pe5118160"
+      }
+    }
+  ],
+  "Emails": [{
+    "attributes": {
+        "email": "tmcgoochk@boston.com"
+      },
+    "v_id": "tmcgoochk@boston.com",
+    "v_type": "Email"
+  }],
+  "PAEEntities": [
+    {
+      "attributes": {
+        "paeEntity": "pae230969030684738970953"
+      },
+      "v_id": "pae230969030684738970953",
+      "v_type": "PAEEntity"
+    },
+    {
+      "attributes": {
+        "paeEntity": "pae941601206768207548875"
+      },
+      "v_id": "pae941601206768207548875",
+      "v_type": "PAEEntity"
+    },
+    {
+      "attributes": {
+        "paeEntity": "Pae579591224247922153214"
+      },
+      "v_id": "Pae579591224247922153214",
+      "v_type": "PAEEntity"
+    },
+    {
+      "attributes": {
+        "paeEntity": "Pae41009644493602>064g19n"
+      },
+      "v_id": "Pae410096444836¢022>6ag19n",
+      "v_type": "PAEEntity"
+    }
+  ],
+  "ClosedAccounts": [
+    {
+      "attributes": {
+        "account_closed_date": "2025-05-01 00:00:00",
+        "account_number": "988210647963185",
+        "account_type": "ALS_06"
+      },
+      "v_id": "988210647963185",
+      "v_type": "Account"
+    },
+    {
+      "attributes": {
+        "account_closed": "2025-05-03 00:00:00",
+        "account_number": "910677415926007",
+        "account_type": "DDA_01"
+      }
+    }
+  ],
+  "AllAccounts": [
+    {
+      "attributes": {
+        "account_closed_date": "2999-12-31 00:00:00",
+        "account_number": "5446967305664010",
+        "account_type": "ELN_03"
+      },
+      "v_id": "5446967305664010",
+      "v_type": "Account"
+    },{
+      "attributes": {
+        "account_closed_date": "2999-12-31 00:00:00",
+        "account_number": "910677415926007",
+        "account_type": "DDA_01"
+      },
+      "v_id": "910677415926007",
+      "v_type": "Account"
+    }
+  ],
+  "Addresses": [
+    {
+      "attributes": {
+        "address": "349 Bay Road wv"
+      },
+      "v_id": "349 Bay Road wv",
+      "v_type": "Address"
+    },
+    {
+      "attributes": {
+        "address": "5 Pierstorff Alley Ny"
+      },
+      "v_id": "5 Pierstorff Alley Ny",
+      "v_type": "Address"
+    }
+  ]
+ }

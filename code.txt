@@ -1,0 +1,139 @@
+# azure_helper.py
+import requests
+import json
+from config import AZURE_ENDPOINT, AZURE_DEPLOYMENT, AZURE_API_KEY, AZURE_API_VERSION
+
+def extract_intent(prompt):
+    url = f"{AZURE_ENDPOINT}openai/deployments/{AZURE_DEPLOYMENT}/chat/completions?api-version={AZURE_API_VERSION}"
+
+    sys_prompt = '''You are an intent extractor. Given a prompt, return ONLY a compact JSON like:
+{"intent": "ring_explanation", "ring_id": "12345"}
+If the prompt is like "explain ring 12345", extract ring_id and intent.
+ALWAYS return a flat one-line JSON.'''
+
+    payload = {
+        "messages": [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.2,
+        "max_tokens": 150
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": AZURE_API_KEY,
+        "x-ms-model-mesh-model-name": AZURE_DEPLOYMENT
+    }
+
+    resp = requests.post(url, headers=headers, json=payload)
+    print("[Azure] Intent raw response:", resp.text)
+
+    data = resp.json()
+    content = data["choices"][0]["message"]["content"]
+
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return {"intent": None, "ring_id": None}
+
+def explain_result(result_str):
+    url = f"{AZURE_ENDPOINT}openai/deployments/{AZURE_DEPLOYMENT}/chat/completions?api-version={AZURE_API_VERSION}"
+
+    sys_prompt = """
+You are a data-to-text expert. Your task is to extract fields from a JSON representing a fraud detection ring structure and generate a very specific summary.
+
+Expected output format:
+Ring "<TargetRing.v_id>" is comprised of [<PEEntities[].v_id>] entities with a total of [<DDA account_numbers>] DDA accounts and [<RPS account_numbers>] RPS accounts. 
+The entities have an average BART score of [<TargetRing.attributes.avg_pae_risk>]. 
+Accounts [<ClosedAccounts[].account_number>] were closed in the past 60 days. 
+We have seen [<ZelleTokenWithSendercount[].sender_count>] number (<calculated_percentage>%) of DDA accounts with Zelle transactions to the same recipient. 
+An additional [<count of Addresses>] number of accounts were linked by a physical address.
+
+Instructions:
+- Replace placeholders with actual values from JSON.
+- Calculate the percentage as (Zelle sender count / total PEEntities) * 100, rounded to one decimal.
+- Only include the final percentage value in parentheses, not the formula.
+- If any section's data is missing, skip that sentence.
+- Return the final output as a single paragraph without any explanation.
+"""
+
+    payload = {
+        "messages": [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": f"Explain this fraud ring detection result:\n{result_str}"}
+        ],
+        "temperature": 0.3,
+        "max_tokens": 500
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": AZURE_API_KEY,
+        "x-ms-model-mesh-model-name": AZURE_DEPLOYMENT
+    }
+
+    resp = requests.post(url, headers=headers, json=payload)
+    print("[Azure] Explanation raw:", resp.text)
+
+    data = resp.json()
+    return data["choices"][0]["message"]["content"]
+
+
+# config.py
+TG_HOST = "localhost"
+TG_PORT = "14240"
+TG_GRAPH_NAME = "FraudDetection"
+TG_TOKEN = "YOUR_TG_TOKEN_HERE"
+USE_TG_AUTH = True
+
+AZURE_ENDPOINT = "https://your-resource.cognitiveservices.azure.com/"
+AZURE_DEPLOYMENT = "gpt-4.1"
+AZURE_API_KEY = "YOUR_API_KEY_HERE"
+AZURE_API_VERSION = "2024-12-01-preview"
+
+
+# tg_client.py
+from pyTigerGraph import TigerGraphConnection
+from config import TG_HOST, TG_PORT, TG_TOKEN, USE_TG_AUTH, TG_GRAPH_NAME
+
+def call_describe_ring(ring_id):
+    host_url = f"http://{TG_HOST}"
+    conn = TigerGraphConnection(
+        host=host_url,
+        graphname=TG_GRAPH_NAME,
+        restppPort=int(TG_PORT),
+        useCert=False
+    )
+    if USE_TG_AUTH:
+        conn.apiToken = TG_TOKEN
+
+    body = {"ring_id": ring_id}
+    print(f"[TG] Sending request to describe Ring {ring_id}")
+    response = conn.runInstalledQuery("get_full_data", params=body)
+    return response
+
+
+# main.py
+import json
+from azure_helper import extract_intent, explain_result
+from tg_client import call_describe_ring
+
+def main():
+    prompt = input("Enter your prompt (e.g. 'Can you explain Ring 12345?'): ")
+    intent_data = extract_intent(prompt)
+    print("Intent Extracted:", intent_data)
+
+    intent = intent_data.get("intent")
+    ring_id = intent_data.get("ring_id")
+
+    if intent == "ring_explanation" and ring_id:
+        tg_result = call_describe_ring(ring_id)
+        print("TG Raw Result:", tg_result)
+        explanation = explain_result(json.dumps(tg_result))
+        print("\nFinal Explanation:\n", explanation)
+    else:
+        print("Could not extract valid ring ID or intent from prompt.")
+
+if __name__ == "__main__":
+    main()
