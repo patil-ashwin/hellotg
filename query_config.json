@@ -30,5 +30,13 @@
     "description": "Explains the connections between merchants and users",
     "input_params": ["merchant_id"],
     "explanation_type": "free"
+  },
+  {
+    "intent": "vertex_lookup",
+    "query_name": "getVertexDetailsForLIM",
+    "description": "Finds a vertex matching the input ID across multiple vertex types including PAEEntity, PEEntity, Account, LPID, name, Email, Address, Phone, ANI",
+    "input_params": ["vid"],
+    "explanation_type": "freeform",
+    "system_prompt": "You are a helpful assistant. Explain which vertex types matched the given vid and summarize the search results. Mention the fields that matched and how the result was constructed. Skip fields that are not found."
   }
 ]
