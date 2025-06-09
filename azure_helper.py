@@ -39,17 +39,25 @@ embedder = OpenAIEmbeddings(
 def extract_intent(prompt):
     system_prompt = '''You are an intent extractor. Given a prompt, return ONLY a compact JSON like:
 {"intent": "ring_explanation", "ring_id": "12345"}'''
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=prompt)
-    ]
+    messages = [SystemMessage(content=system_prompt), HumanMessage(content=prompt)]
     response = llm(messages).content
     print("[Azure] Intent raw response:", response)
+
     try:
-        return json.loads(response)
-    except Exception as e:
-        print("Intent extraction failed:", e)
-        return {"intent": None}
+        parsed = json.loads(response)
+        if parsed.get("intent"):
+            return parsed
+    except Exception:
+        pass
+
+    # Fallback: simple keyword scan
+    lower_prompt = prompt.lower()
+    for entry in loaded_intents:  # this is your JSON list
+        for keyword in entry.get("keywords", []):
+            if keyword in lower_prompt:
+                return {"intent": entry["intent"]}
+
+    return {"intent": None}
 
 # 2. EXPLANATION GENERATOR (based on config)
 def explain_result(tg_json, config):
