@@ -1,59 +1,68 @@
 import json
-from config_loader import load_query_config
-from azure_helper import (
-    extract_intent,
-    explain_result,
-    store_json_and_embed,
-    answer_question_with_context
-)
-from tg_client import call_describe_ring
+from azure_helper import extract_intent, explain_result
+from tg_client import call_tigergraph_query
+from rag_helper import build_vectorstore_from_json, query_vectorstore
 
-# Load query config (mapped by intent)
-QUERY_CONFIG = load_query_config()
+vectorstore = None
 
-def main():
-    while True:
-        prompt = input("\nEnter your prompt (e.g. 'Ask anything') or type 'exit' to quit: ")
-        if prompt.lower() == "exit":
-            print("Goodbye!")
-            break
+# Load query config
+with open("query_config.json") as f:
+    all_query_configs = json.load(f)
+    QUERY_CONFIG = {conf["intent"]: conf for conf in all_query_configs}
 
-        intent_data = extract_intent(prompt)
-        print("Intent Extracted:", intent_data)
+def handle_query(prompt):
+    global vectorstore
 
-        intent = intent_data.get("intent")
-        if not intent or intent not in QUERY_CONFIG:
-            print(f"Unknown or unsupported intent: {intent}")
-            continue
+    # Step 1: Extract intent
+    intent_data = extract_intent(prompt)
+    intent = intent_data.get("intent")
 
-        config = QUERY_CONFIG[intent]
-        query_name = config.get("query_name")
-        input_params = config.get("input_params", [])
+    if intent not in QUERY_CONFIG:
+        print("Unsupported intent or query.")
+        return
 
-        # Prepare parameters for TigerGraph query
-        tg_args = {param: intent_data.get(param) for param in input_params}
-        if not all(tg_args.values()):
-            print(f"Missing required input params for query: {input_params}")
-            continue
+    # Step 2: Load query metadata
+    config = QUERY_CONFIG[intent]
+    query_name = config["query_name"]
+    input_params = {k: intent_data[k] for k in config.get("input_params", []) if k in intent_data}
 
-        # Execute TigerGraph query
-        tg_result = call_describe_ring(**tg_args)
-        print("TG Raw Result:", tg_result)
+    # Step 3: TigerGraph query call
+    tg_result_list = call_tigergraph_query(query_name, input_params)
 
-        # Explain result if required
-        explanation = explain_result(tg_result, config)
-        print("\nFinal Explanation:\n", explanation)
+    # Step 4: Use the first result (assumption: single-object return)
+    if not tg_result_list:
+        print("No results returned from TigerGraph.")
+        return
+    tg_result = tg_result_list[0]
 
-        # Store for in-memory RAG (follow-up Q&A)
-        #store_json_and_embed(tg_result, intent)
+    # Step 5: Build vectorstore for follow-ups
+    vectorstore = build_vectorstore_from_json(tg_result)
 
-        # Q&A loop for follow-ups
-        #while True:
-            #question = input("\nAsk a follow-up question about this result (or type 'exit' to go back to main prompt): ")
-            #if question.lower() == "exit":
-                #break
-            #answer = answer_question_with_context(question, intent)
-            #print("Answer:", answer)
+    # Step 6: Explanation
+    explanation_type = config.get("explanation_type", "freeform")
+    system_prompt = "\n".join(config.get("custom_prompt", [])) if explanation_type == "custom" else None
+    explanation = explain_result(tg_result, config)
+
+    print("\nResult:\n", explanation)
+
+def follow_up():
+    global vectorstore
+    question = input("\nFollow-up question: ")
+    if vectorstore:
+        answer = query_vectorstore(question, vectorstore)
+        print("\nAnswer:\n", answer)
+    else:
+        print("Run a main query first.")
 
 if __name__ == "__main__":
-    main()
+    print("Welcome to BART OpenAI Assistant. Type 'exit' to quit.")
+    while True:
+        prompt = input("\nEnter your prompt: ")
+        if prompt.lower() in ["exit", "quit"]:
+            break
+        handle_query(prompt)
+        while True:
+            subq = input("\nDo you have follow-up questions? (yes/no): ")
+            if subq.lower() != "yes":
+                break
+            follow_up()
